@@ -6,7 +6,6 @@ function headers_main() {
     var top_header;
     var headers_db = {};//store valid headers by hash
     var INITIAL_DIFFICULTY;
-    var headers_batch = 5000;
     if (mode == "test") {
 	INITIAL_DIFFICULTY = 2500;
 	retarget_frequency = 12;
@@ -23,28 +22,41 @@ function headers_main() {
 	write_header(top_header, 2177732187806707);
 	//to find the ewah headers_object.read_ewah(hash(headers_object.serialize(headers_object.top())));
     }
-    
+
     //var top_header = 0;//stores the valid header with the most accumulated work.
     //var top_hash = hash(serialize_header(top_header));
     //headers_db[top_hash] = top_header;
-    
+
     var top_diff = 0;//accumulative difficulty of top
     var button = button_maker2("more headers ", more_headers);
-    document.body.appendChild(button);
-    wallet_text = document.createElement("p");
-    wallet_text.innerHTML = JSON.stringify([["height", 0], ["total work", 0]]);
-    document.body.appendChild(wallet_text);
-    more_headers();
-    function write_header(header, ewah) {
-	//console.log("write header");
+
+	wallet_text = document.createElement("div");
+	wallet_text.innerHTML = "<div class='fieldset'><label>Height:</label><p>0</p></div>";
+	wallet_text.innerHTML += "<div class='fieldset'><label>Total work:</label><p>0</p></div>";
+
+	button.className = "btn";
+	var blockchain = document.getElementById('blockchain-wrap');
+	var blockchain_right = document.getElementById('blockchain-right');
+
+	append_children(blockchain, [button]);
+	append_children(blockchain_right, [wallet_text]);
+
+    setInterval(function() {
+        more_headers();
+    }, 20000);
+
+	more_headers();
+	function write_header(header, ewah) {
+	    // console.log("write header");
         var acc_difficulty = header[9];
         if (acc_difficulty > top_diff) {
             top_diff = acc_difficulty;
             top_header = header;
 	    //console.log("wallet text update");
-            wallet_text.innerHTML = JSON.stringify([["height", header[1]], ["total work", (Math.floor(header[9]/100000000))]]);
-        }
-        h = hash(serialize_header(header));
+			wallet_text.innerHTML = "<div class='fieldset'><label>Height:</label><p>" + header[1] + "</p></div>";
+			wallet_text.innerHTML += "<div class='fieldset'><label>Total work:</label><p>" + (Math.floor(header[9] / 100000000)) + "</p></div>";
+		}
+		h = hash(serialize_header(header));
         headers_db[h] = [header, ewah];
     }
     function read_ewah(hash) {
@@ -170,7 +182,7 @@ function headers_main() {
 	var n = old.times(t).divide(bottom);
         //var n = Math.max(1, Math.floor(( old * t ) / bottom));
         //var n = Math.max(1, Math.floor(( old / bottom) * t));
-	
+
         var d = int2sci(n);
         return Math.max(1, d);
     }
@@ -288,7 +300,7 @@ function headers_main() {
 	console.log("ewah: ");
 	console.log(ewah);//should be 1, is 19
 	*/
-	
+
 	//var Hashrate0 = Math.floor(Math.max(1, hashrate_converter() * sci2int(prev_header[6]) / DT));
 	//var Hashrate = Math.min(Hashrate0, prev_ewah * 4);
 	//var N = 20;
@@ -335,7 +347,7 @@ function headers_main() {
         } else {
             n = top_header[1];
         }
-        variable_public_get(["headers", headers_batch + 1, n], absorb_headers);
+        variable_public_get(["headers", 5001, n], absorb_headers);
     }
     function serialize_header(x) {
         var height = x[1]; //4 bytes
@@ -387,4 +399,4 @@ function headers_main() {
     }
     return {sci2int: sci2int, serialize: serialize_header, top: (function() { return top_header; }), db: headers_db, read_ewah: read_ewah};
 }
-var headers_object = headers_main();
+headers_object = headers_main();
